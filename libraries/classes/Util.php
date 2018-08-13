@@ -23,8 +23,6 @@ use PhpMyAdmin\SqlParser\Token;
 use PhpMyAdmin\SqlParser\Utils\Error as ParserError;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
-use Williamdes\MariaDBMySQLKBS\Search as KBSearch;
-use Williamdes\MariaDBMySQLKBS\KBException;
 
 /**
  * Misc functions used all over the scripts.
@@ -359,45 +357,12 @@ class Util
     }
 
     /**
-     * Get a link to variable documentation
-     *
-     * @param string  $name       The variable name
-     * @param boolean $useMariaDB Use only MariaDB documentation
-     * @param string  $text       (optional) The text for the link
-     * @return string link or empty string
-     */
-    public static function linkToVarDocumentation(
-        string $name,
-        bool $useMariaDB = false,
-        string $text = null
-    ): string {
-        $html = '';
-        try {
-            $type = KBSearch::MYSQL;
-            if ($useMariaDB) {
-                $type = KBSearch::MARIADB;
-            }
-            $docLink = KBSearch::getByName($name, $type);
-            $html = Util::showMySQLDocu(
-                $name,
-                false,
-                $docLink,
-                $text
-            );
-        } catch (KBException $e) {
-            unset($e);// phpstan workaround
-        }
-        return $html;
-    }
-
-    /**
      * Displays a link to the official MySQL documentation
      *
-     * @param string      $link    contains name of page/anchor that is being linked
-     * @param bool        $bigIcon whether to use big icon (like in left frame)
-     * @param string|null $url     href attribute
-     * @param string|null $text    text of link
-     * @param string      $anchor  anchor to page part
+     * @param string $link      contains name of page/anchor that is being linked
+     * @param bool   $big_icon  whether to use big icon (like in left frame)
+     * @param string $anchor    anchor to page part
+     * @param bool   $just_open whether only the opening <a> tag should be returned
      *
      * @return string  the html link
      *
@@ -405,29 +370,20 @@ class Util
      */
     public static function showMySQLDocu(
         $link,
-        bool $bigIcon = false,
-        $url = null,
-        $text = null,
-        $anchor = ''
-    ): string {
-        if ($url === null) {
-            $url = self::getMySQLDocuURL($link, $anchor);
-        }
-        $openLink = '<a href="' . htmlspecialchars($url) . '" target="mysql_doc">';
-        $closeLink = '</a>';
-        $html = '';
-
-        if ($bigIcon) {
-            $html = $openLink .
-                    self::getImage('b_sqlhelp', __('Documentation'))
-                    . $closeLink;
-        } elseif ($text !== null) {
-            $html = $openLink . $text . $closeLink;
-        } else {
-            $html = self::showDocLink($url, 'mysql_doc');
+        $big_icon = false,
+        $anchor = '',
+        $just_open = false
+    ) {
+        $url = self::getMySQLDocuURL($link, $anchor);
+        $open_link = '<a href="' . $url . '" target="mysql_doc">';
+        if ($just_open) {
+            return $open_link;
+        } elseif ($big_icon) {
+            return $open_link
+                . self::getImage('b_sqlhelp', __('Documentation')) . '</a>';
         }
 
-        return $html;
+        return self::showDocLink($url, 'mysql_doc');
     } // end of the 'showMySQLDocu()' function
 
     /**
@@ -4057,7 +4013,8 @@ class Util
                 'vars'        => __('Variables'),
                 'charset'     => __('Charsets'),
                 'plugins'     => __('Plugins'),
-                'engine'      => __('Engines')
+                'engine'      => __('Engines'),
+				'new'         => __('New Tab')
             ],
             'db'     => [
                 'structure'   => __('Structure'),
