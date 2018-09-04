@@ -29,4 +29,5 @@ $controller = $container->get(
     'ServerPluginsController',
     []
 );
+
 $controller->indexAction();
